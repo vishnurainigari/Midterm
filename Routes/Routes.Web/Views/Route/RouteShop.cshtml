@@ -1,0 +1,67 @@
+﻿@{
+    ViewBag.Title = "RouteShop";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var routes = (List<Routes.Models.RouteViewModel>)ViewData["Routes"];
+    
+}
+<style>
+    fieldset.route-info-border {
+        border: 1px solid #CCC !important;
+        padding: 0 1.4em 1.4em 1.4em !important;
+        margin: 0 0 1.5em 0 !important;
+        -webkit-box-shadow: 0px 0px 0px 0px #ccc;
+        box-shadow: 0px 0px 0px 0px #ccc;
+        border-radius: 6px;
+        width: 650px;
+    }
+
+    legend.route-info-border {
+        font-size: 1.2em !important;
+        font-weight: bold !important;
+        text-align: left !important;
+        width: auto;
+        padding: 0 10px;
+        border-bottom: none;
+        color: #828283;
+    }
+    fieldset legend {
+        display: block;
+    }
+    .routes {
+        list-style-type: none;
+    }
+    .check-points {
+        list-style-type: none;
+    }
+    #routes li {
+        line-height: 20px;
+    }
+</style>
+
+<h2>Route Shop</h2>
+
+<fieldset class="route-info-border">
+    <legend class="route-info-border"> Available Routes - Click on Route to select and walk </legend>
+    <div>
+        @if (routes != null)
+        {
+            <ul class="routes">
+                @foreach (var route in routes)
+                {
+                    <li>@Html.ActionLink(route.RouteName, "GetRouteDirections", new { routeID = route.RouteID })
+
+                    @if (route.CheckPoints != null && route.CheckPoints.Count > 0)
+                    {
+                        <ul class="check-points">
+                            @foreach (var cp in route.CheckPoints)
+                            {
+                                <li>@cp.CheckPointName - @cp.CheckPointDesc</li>
+                            }
+                        </ul>
+                    }
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</fieldset>

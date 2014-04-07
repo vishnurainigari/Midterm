@@ -1,0 +1,154 @@
+﻿@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .check_point {
+        margin-bottom: 20px;
+    }
+
+    .check_point_desc {
+        width: 400px;
+    }
+    #check-points-container {
+        display: none;
+    }
+    fieldset.route-info-border {
+        border: 1px solid #CCC !important;
+        padding: 0 1.4em 1.4em 1.4em !important;
+        margin: 0 0 1.5em 0 !important;
+        -webkit-box-shadow: 0px 0px 0px 0px #ccc;
+        box-shadow: 0px 0px 0px 0px #ccc;
+        border-radius: 6px;
+    }
+
+    legend.route-info-border {
+        font-size: 1.2em !important;
+        font-weight: bold !important;
+        text-align: left !important;
+        width: auto;
+        padding: 0 10px;
+        border-bottom: none;
+        color: #828283;
+    }
+
+    fieldset.check-points-border {
+        border: 1px solid #CCC !important;
+        padding: 0 1.4em 1.4em 1.4em !important;
+        margin: 0 0 1.5em 0 !important;
+        -webkit-box-shadow: 0px 0px 0px 0px #ccc;
+        box-shadow: 0px 0px 0px 0px #ccc;
+        border-radius: 6px;
+    }
+
+    legend.check-points-border {
+        font-size: 1.2em !important;
+        font-weight: bold !important;
+        text-align: left !important;
+        width: auto;
+        padding: 0 10px;
+        border-bottom: none;
+        color: #828283;
+    }
+
+    fieldset legend {
+        display: block;
+    }
+    #errors_well {
+        width: 800px;
+        background: rgb(255, 237, 240);
+    }
+</style>
+<h2>Create Route</h2>
+
+<div id="errors_well" class="well hide" style="padding-bottom: 20px;">
+    <b>Errors encountered:</b><br />
+    <ul id="error_list" style="color: Red;"></ul>
+
+    Please resolve the above errors to continue.
+</div>
+<div>
+    <fieldset class="route-info-border">
+        <legend class="route-info-border"> Route Info </legend>
+        <div>
+            @Html.TextBox("txt_route_name", null, new { @placeholder = "Route Name" }) <br />
+            @Html.TextArea("txt_route_desc", "", new { style = "height: 80px; width: 500px;", @placeholder = "Short Description" }) <br /><br />
+            @Html.DropDownList("poi_src_select", null, new { }) <br />
+            @Html.DropDownList("poi_dest_select", null, new { })<br /><br />
+        </div>
+    </fieldset>
+    <div id="check-points-container">
+        <fieldset class="check-points-border">
+            <legend class="check-points-border"> Check Points </legend>
+            <div class="check_points">
+
+            </div>
+        </fieldset>
+    </div>
+</div>
+<div>
+    <button id="btn_save" class="btn btn-primary">Save</button>
+    <button id="btn_add_check_point" class="btn btn-success ">Add Check Point</button>
+</div>
+
+@section scripts {
+    <script type="text/javascript">
+        $(function () {
+            $('#btn_add_check_point').on('click', function (e) {
+                e.preventDefault();
+                $('#check-points-container').show();
+                var chk_point_div = '<div class="check_point"><input type="text" class="check_point_name" placeholder="Check Point Name"><br/><input type="text" class="check_point_desc" placeholder="Short Description"></div>';
+
+                $('.check_points').append(chk_point_div);
+            });
+
+            $('#btn_save').on('click', function (e) {
+                e.preventDefault();
+                var route_name = $('#txt_route_name').val();
+                var route_desc = $('#txt_route_desc').val();
+                var poi_src_id = $('#poi_src_select').val();
+                var poi_dest_id = $('#poi_dest_select').val();
+                var check_points = [];
+
+                $('.check_point').each(function () {
+                    var cp_name = $(this).children('.check_point_name').val();
+                    var cp_desc = $(this).children('.check_point_desc').val();
+
+                    var check_point = {
+                        CheckPointName: cp_name,
+                        CheckPointDesc: cp_desc
+                    };
+
+                    check_points.push(check_point);
+                });
+
+                var post_data = {
+                    RouteName: route_name,
+                    RouteDesc: route_desc,
+                    FromID: poi_src_id,
+                    ToID: poi_dest_id,
+                    CheckPoints: check_points
+                };
+
+                $.post('/Route/SaveRoute', { data: JSON.stringify(post_data) }, function (result) {
+                    if (result.success) {
+                        alert('Route saved succesfully! Click OK to continue to Route Shop');
+                        window.location = "/Route/RouteShop";
+                    }
+                    else {
+                        var errors = result.errors;
+
+                        if (errors.length > 0) {
+                            $("#errors_well").show();
+
+                            $(errors).each(function () {
+                                $("#error_list").append('<li>' + this + '</li>');
+                            });
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+}

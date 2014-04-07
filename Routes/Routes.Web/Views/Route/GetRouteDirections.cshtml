@@ -1,0 +1,217 @@
+﻿@{
+    ViewBag.Title = "GetDirections";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var route = (Routes.Models.RouteViewModel)ViewData["Route"];
+    
+}
+<style>
+    #map-canvas {
+        height: 100%;
+    }
+    #direction-panel {
+        width: 350px;
+        height: 200px;
+        display: inline-table;
+        float: left;
+        margin-right: 50px;
+    }
+    #map-panel {
+        width: 347px;
+        height: 224px;
+    }
+    #progress_modal {
+        width: auto;
+        height: auto;
+        padding: 40px;
+    }
+
+    progress-text {
+        margin: 10px 10px;
+    }
+
+    .modal {
+        top: 40% !important;
+        left: 60%;
+    }
+</style>
+<h2>Directions <button id="btn_walk" class="btn btn-success">Walk</button></h2>
+@Html.Hidden("hdn_route_from", route.From)
+@Html.Hidden("hdn_route_to", route.To)
+@Html.Hidden("hdn_route_id", route.RouteID)
+
+<div>
+    <div id="direction-panel"></div>
+    <div id="map-panel" />
+</div>
+
+<div id="progress_modal" class="modal hide fade center" tabindex="-1" role="dialog" aria-labelledby="" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+
+    @section scripts {
+        <script type="text/javascript">
+            var directionsDisplay;
+            var directionsService = new google.maps.DirectionsService();
+
+            function InitializeMap() {
+                directionsDisplay = new google.maps.DirectionsRenderer();
+                var latlng = new google.maps.LatLng(-34.397, 150.644);
+                var myOptions =
+                {
+                    zoom: 10,
+                    center: latlng,
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                };
+                var map = new google.maps.Map(document.getElementById("map-panel"), myOptions);
+
+                directionsDisplay.setMap(map);
+                directionsDisplay.setPanel(document.getElementById('direction-panel'));
+            }
+
+            InitializeMap();
+
+            $(function () {
+                function calcRoute() {
+                    var start = $('#hdn_route_from').val();
+                    var end = $('#hdn_route_to').val();
+
+                    var request = {
+                        origin: start,
+                        destination: end,
+                        travelMode: google.maps.DirectionsTravelMode.WALKING
+                    };
+                    directionsService.route(request, function (response, status) {
+                        if (status == google.maps.DirectionsStatus.OK) {
+                            directionsDisplay.setDirections(response);
+                        }
+                    });
+                }
+
+                calcRoute();
+            });
+
+            var is_next_destination = false;
+            var check_point_name = '';
+            var check_point_desc = '';
+            var next_check_point_index = 0;
+            var route_info = null;
+
+            function StartWalking() {
+                var route_id = $('#hdn_route_id').val();
+                $.get('/Route/GetRouteInfo',
+                    { routeID: route_id },
+                    function (data) {
+                        route_info = data;
+
+                        NextActionAfterTimeout();
+                    }
+                );
+            }
+
+            function NextAction() {
+                if (route_info != null) {
+                    if (is_next_destination) {
+                        var content = '<div class="progress-text"><strong>No more check points, arriving at destination...</strong></div>';
+                        $('#progress_modal').html(content);
+
+                        setTimeout(function () {
+                            ShowDestinationInfo();
+                        }, 3000);
+                    }
+                    else {
+                        var content = '<div class="progress-text"><strong>Looking out for next checkpoint...</strong></div>';
+                        $('#progress_modal').html(content);
+
+                        setTimeout(function () {
+                            ShowCheckPointInfo();
+                        }, 3000);
+                    }
+                }
+            }
+
+            function ShowCheckPointInfo() {
+                var check_points = route_info.data.CheckPoints;
+                var i = 0;
+
+                $(check_points).each(function () {
+
+                    if (next_check_point_index == 0 || i >= next_check_point_index) {
+                        next_check_point_index = i + 1;
+
+                        check_point_name = this["CheckPointName"];
+                        check_point_desc = this["CheckPointDesc"];
+                        return false;
+                    }
+
+                    i++;
+                });
+
+                is_next_destination = ($(check_points).length == next_check_point_index);
+
+                if (check_point_name != '') {
+                    if (!check_point_desc || check_point_desc == '')
+                        check_point_desc = 'N/A';
+
+                    var content = '<div><strong>Arrived at check point</strong><br/><br/>  <div>Name: ' + check_point_name + '</div><div>Short Description: ' + check_point_desc + '</div> <br/><button class="btn btn-success btn_continue">Check-In And Continue</button></div>';
+                    $('#progress_modal').html(content);
+                }
+                else {
+                    var content = '<div><strong>No check point found, walking...</strong></div>';
+                    $('#progress_modal').html(content);
+
+                    NextActionAfterTimeout();
+                }
+            }
+
+            function NextActionAfterTimeout() {
+                setTimeout(function () {
+                    NextAction();
+                }, 3000);
+            }
+
+            function ShowDestinationInfo() {
+                var select = '<select id="rating" class="span4">';
+                select += '<option value="-1">-- Select a Rating --</option>';
+                select += '<option value="1">1 Star - Not Satisfied</option>';
+                select += '<option value="2">2 Star - Okay</option>';
+                select += '<option value="3">3 Star - Satisfied</option>';
+                select += '<option value="4">4 Star - Very Satisfied</option>';
+                select += '<option value="5">5 Star - Excellent</option>';
+                select += '</select>';
+
+                var content = '<div class="progress-text"><strong>Arrived at destination!</strong><br/><br/><div>How would you like to rate your experience? <br/>' + select + '</div><br/><div><button id="btn_submit_rating" class="btn btn-success">Submit Rating</button><button id="btn_nav_route_shop" class="btn btn-primary">Go To Routes Shop</button></div></div>';
+                $('#progress_modal').html(content);
+            }
+
+            $(document).on('click', '.btn_continue', function (e) {
+                e.preventDefault();
+
+                var content = '<div class="progress-text"><strong>Walking...<string><div>';
+                $('#progress_modal').html(content);
+
+                NextActionAfterTimeout();
+            }).on('click', '#btn_walk', function (e) {
+                e.preventDefault();
+
+                var content = '<div class="progress-text"><strong>Walking...<string><div>';
+                $('#progress_modal').html(content);
+
+                $('#progress_modal').modal('show');
+
+                StartWalking();
+            }).on('click', '#btn_submit_rating', function (e) {
+                e.preventDefault();
+                var rating = $('#rating').val();
+                if (rating < 0) {
+                    alert('Please Select a Rating');
+                }
+                else {
+                    alert('Thank you for submitting rating! Click OK to navigate to Route Shop');
+                    window.location = "/Route/RouteShop";
+                }
+
+            }).on('click', '#btn_nav_route_shop', function (e) {
+                e.preventDefault();
+                window.location = "/Route/RouteShop";
+            });
+
+        </script>
+    }

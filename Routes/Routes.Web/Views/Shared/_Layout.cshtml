@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html>
+<html lang="en" style="height:100%">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewBag.Title - My ASP.NET MVC Application</title>
+    <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+    <meta name="viewport" content="width=device-width" />
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/jquery")
+
+    @Scripts.Render("~/Scripts/bootstrap.min.js")
+    @Scripts.Render("~/Scripts/bootstrap-modalmanager.js")
+    @Scripts.Render("~/Scripts/bootstrap-modal.js")
+    <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyAWGdXS4gAbTytLc81tzcUYHyslMek55I8&sensor=false"></script>
+</head>
+<body>
+    <header>
+        <div class="content-wrapper">
+            <div class="float-right">
+                <p class="site-title">@Html.ActionLink("Route Catalogue", "RouteShop", "Route")</p>
+            </div>
+        </div>
+    </header>
+    <div id="body">
+        @RenderSection("featured", required: false)
+        <section class="content-wrapper main-content clear-fix">
+            <div class="menu">
+                <ul id="menu-list">
+                    <li>@Html.ActionLink("Route Shop", "RouteShop", "Route")</li>
+                    <li>@Html.ActionLink("Create Route", "CreateRoute", "Route")</li>
+                </ul>
+
+            </div>
+            <div class="body-content">
+                @RenderBody()
+            </div>
+        </section>
+    </div>
+</body>
+@RenderSection("scripts", required: false)
+
+
+</html>
